@@ -20,7 +20,7 @@ public class HoaDonBUS {
 
     // Tìm hóa đơn theo ID
     public HoaDonDTO findHoaDonById(int idHD) {
-        HoaDonDTO hd = hoaDonDAO.findById(idHD);
+        HoaDonDTO hd = hoaDonDAO.findById("idHD", idHD);
         if (hd == null) {
             throw new IllegalArgumentException("Không tìm thấy hóa đơn với ID: " + idHD);
         }

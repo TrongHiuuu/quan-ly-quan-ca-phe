@@ -21,7 +21,7 @@ public class TaiKhoanBUS {
         if (taiKhoan.getTenTK() == null || taiKhoan.getTenTK().isEmpty()) {
             return false; // Tên tài khoản không được rỗng
         }
-        if (taiKhoanDAO.isExist(taiKhoan.getIdTK())) {
+        if (taiKhoanDAO.isExist("idTK", taiKhoan.getIdTK())) {
             return false; // Tài khoản đã tồn tại
         }
         return taiKhoanDAO.add(taiKhoan);

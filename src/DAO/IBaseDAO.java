@@ -1,5 +1,6 @@
 package DAO;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -8,10 +9,10 @@ import java.util.List;
  */
 
 //Interface sẽ định nghĩa các phương thức mà các DAO cần phải implement
-public interface GenericDAO<T, K> {
+public interface IBaseDAO<T> {
     List<T> getAll();           // Lấy tất cả bản ghi
-    T findById(K id);           // Tìm theo ID
-    boolean isExist(K id);      // Kiểm tra tồn tại
-    boolean add(T entity);      // Thêm mới
+    T findById(String column, int id);           // Tìm theo ID
+    boolean isExist(String column, int id);      // Kiểm tra tồn tại
+    boolean add(List<Object> tuple); //Thêm mới
     void closeConnection();     // Đóng kết nối
 }

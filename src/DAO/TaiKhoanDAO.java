@@ -1,6 +1,5 @@
 package DAO;
 
-import DTO.HoaDonDTO;
 import DTO.TaiKhoanDTO;
 
 import java.sql.ResultSet;
@@ -8,37 +7,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TaiKhoanDAO extends AbstractGenericDAO<TaiKhoanDTO, Integer> {
+public class TaiKhoanDAO extends BaseDAO<TaiKhoanDTO> {
 
     @Override
-    protected String getGetAllQuery() {
-        return "SELECT * FROM taikhoan";
+    protected String getTableName() {
+        return "taikhoan";
     }
 
-    @Override
-    protected String getFindByIDQuery(Integer idTK) {
-        return "SELECT * FROM taikhoan WHERE idTK = " + idTK;
-    }
-
-    @Override
-    protected String getIsExistQuery(Integer idTK) {
-        return "SELECT COUNT(*) FROM taikhoan WHERE idTK = " + idTK;
-    }
-
-    @Override
-    protected String getAddQuery(TaiKhoanDTO taiKhoan) {
-        return "INSERT " +
-                "INTO taikhoan (tenTK, matkhau, hoten, email, dienthoai, trangthai, idNQ) " +
-                "VALUES (" +
-                " '" + taiKhoan.getTenTK() + "', " +
-                " '" +taiKhoan.getMatkhau() + "', " +
-                " '" +taiKhoan.getHoten() + "', " +
-                " '" +taiKhoan.getEmail() + "', " +
-                " '" +taiKhoan.getDienthoai() + "', " +
-                (taiKhoan.getTrangthai() ? 1 : 0) + ", " +
-                taiKhoan.getIdNQ() +
-                ")";
-    }
+        @Override
+        protected List<String> getTableColumns() {
+            return List.of("idTK", "tenTK", "matkhau", "hoten", "email", "dienthoai", "trangthai", "idNQ");
+        }
 
     @Override
     protected TaiKhoanDTO mapResultSetToDTO(ResultSet rs) throws SQLException {
@@ -57,19 +36,8 @@ public class TaiKhoanDAO extends AbstractGenericDAO<TaiKhoanDTO, Integer> {
     // Tìm kiếm tài khoản theo từ khóa
     public List<TaiKhoanDTO> search(String kyw) {
         List<TaiKhoanDTO> list = new ArrayList<>();
-        String sql = "SELECT * FROM taikhoan WHERE 1";
-        /*
-         * Lý do không đơn thuần dùng != "" ở đây là vì trong java:
-         *   + Phép != là toán tử kiểm tra tham chiếu, nó kiểm tra xem 2 biến
-         *       có cùng địa chỉ bộ nhớ hay không, chứ không kiểm tra nội dung chuỗi
-         *   + Phương thức equals() hoặc isEmpty() là phương thức kiểm tra nội dung
-         *       nó kiểm tra nội dung 2 chuỗi, kể cả 2 đối tượng là 2 đối tượng riêng biệt trong bộ nhớ
-         * ***Trong Java, các chuỗi literal (được khai báo trong chương trình) giống nhau được lưu trong String Pool
-         *       và tái sử dụng cùng một đối tượng trong bộ nhớ. String kyw là string
-         *       được nhập từ input người dùng, điều này có thể dẫn đến kyw và chuỗi "" được dùng
-         *       trong toán tử != trả về true do khác String Pool, từ đó khiến sql luôn thêm điều kiện phía sau
-         * ***
-         */
+        String sql = "SELECT * FROM "+getTableName()+" WHERE 1=1 ";
+
         if (!kyw.isEmpty())
             sql += "AND (tenTK LIKE '%" + kyw + "%' " +
                     "OR hoten LIKE '%" + kyw + "%'" +
@@ -91,29 +59,44 @@ public class TaiKhoanDAO extends AbstractGenericDAO<TaiKhoanDTO, Integer> {
 
     // Cập nhật tài khoản
     public boolean update(TaiKhoanDTO taiKhoan) {
-        String sql = "UPDATE taikhoan " +
-                "SET " +
-                "tenTK = '" + taiKhoan.getTenTK() + "', " +
-                "matkhau = '" + taiKhoan.getMatkhau() + "', " +
-                "hoten = '" + taiKhoan.getHoten() + "', " +
-                "email = '" + taiKhoan.getEmail() + "', " +
-                "dienthoai = '" + taiKhoan.getDienthoai() + "', " +
-                "trangthai = " + (taiKhoan.getTrangthai() ? 1 : 0) + ", " +
-                "idNQ = " + taiKhoan.getIdNQ() + " " +
-                "WHERE idTK = " + taiKhoan.getIdTK();
-        return db.execute(sql);
+        StringBuilder sql = new StringBuilder("UPDATE " + getTableName() + " " +
+                "SET ");
+        for (int i = 0; i < getTableColumns().size(); i++) {
+            sql.append(getTableColumns().get(i)).append(" = ?");
+            if (i < getTableColumns().size() - 1) {
+                sql.append(", ");
+            }
+        }
+        sql.append(" WHERE idTK = ?");
+        List<Object> params = List.of(
+                taiKhoan.getTenTK(),
+                taiKhoan.getMatkhau(),
+                taiKhoan.getHoten(),
+                taiKhoan.getEmail(),
+                taiKhoan.getDienthoai(),
+                taiKhoan.getTrangthai(),
+                taiKhoan.getIdNQ(),
+                taiKhoan.getIdTK() // Giá trị cho WHERE
+        );
+        return db.execute(sql.toString(), params);
     }
 
     // Khóa tài khoản (trangthai = false)
     public boolean lock(int idTK) {
-        String sql = "UPDATE taikhoan SET trangthai = 0 WHERE idTK = " + idTK;
-        return db.execute(sql);
+        String sql = "UPDATE taikhoan SET trangthai = ? WHERE idTK = ?";
+        List<Object> params = new ArrayList<>();
+        params.add(false);
+        params.add(idTK);
+        return db.execute(sql, params);
     }
 
     // Mở khóa tài khoản (trangthai = true)
     public boolean unlock(int idTK) {
-        String sql = "UPDATE taikhoan SET trangthai = 1 WHERE idTK = " + idTK;
-        return db.execute(sql);
+        String sql = "UPDATE taikhoan SET trangthai = ? WHERE idTK = ?";
+        List<Object> params = new ArrayList<>();
+        params.add(true);
+        params.add(idTK);
+        return db.execute(sql, params);
     }
 
     public TaiKhoanDTO login(String tenTK, String matKhau) {
